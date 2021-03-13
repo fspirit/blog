@@ -120,15 +120,14 @@ window.onload = wrap_img;
 </ul><h2 id="motion-planning-for-self-driving-cars">
 <a class="anchor" href="#motion-planning-for-self-driving-cars" aria-hidden="true"><span class="octicon octicon-link"></span></a>Motion Planning for Self-Driving Cars</h2>
 
-<p>In this series of posts I would like to answer the question: How would we build motion planning component for a self-driving car from scratch using current state of the art approaches.</p>
+<p>In this series of posts I would like to answer the question: How would we build motion planning component for a self-driving car from scratch using current state of the art algorithms.</p>
 
 <p><em>Disclaimer</em>: I’m not a professional researcher  working on this topic, I’m a software developer in the automotive industry, so I will look at different approaches mostly from the perspective of how hard are they to implement and will that implementation lead too satisfying functional &amp; non-functional (runtime) performance. With that in mind, some lack of math/theory can be expected.</p>
 
 <p>First of all let us define a place and function of Motion Planning component/subsystem in the the whole self-driving stack. In the end it must answer a question - where the car goes next 
-and produce a trajectory from which actuator values (acceleration and steering curvature) can be derived and
-passed to the Control block.</p>
+and produce a trajectory from which actuator values, acceleration and steering, can be derived and passed to the Control block.</p>
 
-<p>So the input is basically all the data we can gather about environment and our ego car: road data (road geometries, signs), ego odometry data (position, heading, steering angle and rate of change of those values), max allowed and desired speeds, data about other traffic participants (current poses ans predicted trajectories) and obstacles.</p>
+<p>The input is basically all the data we can gather about environment and our ego car: road data (road geometries, signs), ego odometry data (position, heading, steering angle and rate of change of those values), max allowed and desired speeds, data about other traffic participants (current poses ans predicted trajectories) and obstacles.</p>
 
 <p>As output the component must produce a trajectory, which must be:</p>
 <ul>
@@ -137,14 +136,14 @@ passed to the Control block.</p>
   <li>Comfortable, a driver and/or passengers should feel comfortable while a car drives them. For example, lateral acceleration (which depends on the velocity of the vehicle and curvature of the path it follows) must not exceed a certain limit</li>
 </ul>
 
-<p>Usually Motion Planning task is decomposed into 3 stages, which also usually come in order, producing input for the next stage (although for different use cases and/or decision making approaches some of them can be skipped or merged).</p>
+<p>Usually Motion Planning task is decomposed into 3 stages, which also usually come in order, producing input for the next stage, although for different use cases and/or decision making approaches some of them can be skipped or merged.</p>
 
 <p><img src="/blog/images/MotionPlanning.png" alt=""></p>
 
 <h3 id="route-planning">
 <a class="anchor" href="#route-planning" aria-hidden="true"><span class="octicon octicon-link"></span></a>Route Planning</h3>
 
-<p>At this stage we look at road graph and, knowing the final destination, construct a path through road segments to reach it. Here the graph search algorithms are employed, Dijkstra, A<em>, D</em> and the like.
+<p>At this stage we look at road graph and, knowing the final destination, construct a path through road segments to reach it. Here the graph search algorithms are employed, Dijkstra, A*, D* and the like.
 The result is a sequence of road segments ego vehicle has to follow.</p>
 
 <h3 id="maneuver-planning">
@@ -154,7 +153,7 @@ The result is a sequence of road segments ego vehicle has to follow.</p>
 Examples for highway scenario can be: keep current lane, change to left, change to right.
 Then, depending on approach, we either select one immediately and proceed to generating trajectory or
 we generate trajectory for each of possible maneuvers and select one of them, based on some set of criteria.
-Here we consider million of factors, like road limits (current speed limit, traffic lights, lane merging/splitting).
+We consider wide range of factors, like road limits (current speed limit, traffic lights, lane merging/splitting).
 Most popular approches here include:</p>
 <ul>
   <li>State machines</li>
@@ -168,13 +167,13 @@ Most popular approches here include:</p>
 <p>The remark should be made about path and trajectory distinction:
 while path contains just geometrical information and is an ordered sequence of poses (x, y, heading, curvature) of the vehicle, a trajectory 
 considers time dimension and thus will also entail velocities and accelerations.
-One way to get final trajectory is to generate collision-free (including dynamic objects!), feasible path first and then decide on velocity profile to maximize comfort. Another approach would be to try to state and solve a problem, which takes velocities and accelerations into account right away.
+One way to get final trajectory is to generate collision-free, feasible path first and then decide on velocity profile to maximize comfort. Another approach would be to try to state and solve a problem, which takes velocities and accelerations into account right away.
 Methods here include:</p>
 <ul>
   <li>
-<strong>Graph-based</strong>. First generate a graph of possible states a vehicle can be in next X seconds, for instance, divide all the space around into geometric shapes like squares or rectangles, assigning cost to each, or using several possible feasible movements recusively build a tree. Then run on top of that one of those graph search algorithms mentioned already: Dijkstra, A<em>, D</em> or their variations.</li>
+<strong>Graph-based</strong>. First generate a graph of possible states a vehicle can be in next X seconds, for instance, divide all the space around into geometric shapes like squares or rectangles, assigning cost to each, or using several possible feasible movements recusively build a tree. Then run on top of that one of those graph search algorithms mentioned already: Dijkstra, A*, D* or their variations.</li>
   <li>
-<strong>RTT family</strong>. This algorithms randomly samples next pose for the vehicle and builds a tree with a root at current vehicle state, until it reaches target area.</li>
+<strong>RTT family</strong>. This algorithms randomly samples next pose for the vehicle and builds a tree, until it reaches area around target pose.</li>
   <li>
 <strong>Numerical optimization</strong>. Here the problem of generating trajectory is stated as an optimal control problem, that is as a cost functional to minimize (which can take different forms), set of variables that can be controlled (acceleration/steering), quality and inequality constraints on those and derived variables. Then we run solvers to get the target variables values, which minimize cost functions and satisfy all the constraints.</li>
   <li>
